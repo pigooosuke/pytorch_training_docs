@@ -12,7 +12,7 @@ from torchvision import transforms, utils
 import warnings
 warnings.filterwarnings("ignore")
 
-plt.ion()
+# plt.ion()
 
 landmarks_frame = pd.read_csv("faces/face_landmarks.csv")
 
@@ -29,7 +29,7 @@ def show_landmarks(image,landmarks):
     """show image with landmarks"""
     plt.imshow(image)
     plt.scatter(landmarks[:,0], landmarks[:,1],s=10, marker=".",c="r")
-    plt.pause(0.001)
+    # plt.pause(0.001)
 
 plt.figure()
 show_landmarks(io.imread(os.path.join("faces/", img_name)),
@@ -54,10 +54,10 @@ class FaceLandmarksDataset(Dataset):
     def __len__(self):
         return len(self.landmarks_frame)
 
-    def __getimtem__(self,idx):
+    def __getitem__(self,idx):
         img_name = os.path.join(self.root_dir, self.landmarks_frame.ix[idx,0])
-        img = os.imread(img_name)
-        landmarks = self.landmarks_frame[idx,1:].as_matrix().astype("float")
+        img = io.imread(img_name)
+        landmarks = self.landmarks_frame.ix[idx,1:].as_matrix().astype("float")
         landmarks = landmarks.reshape(-1,2)
         sample = {"image":img, "landmarks":landmarks}
         if self.transform:
@@ -148,3 +148,17 @@ class ToTensor(object):
                 "landmarks":torch.from_numpy(landmarks)}
 
 scale = Rescale(256)
+crop = RandomCrop(128)
+composed = transforms.Compose([Rescale(256),
+                                RandomCrop(224)])
+
+fig = plt.figure()
+sample = face_dataset[65]
+for i, tsfrm in enumerate([scale,crop,composed]):
+    transformed_sample = tsfrm(sample)
+    ax = plt.subplot(1,3,i+1)
+    plt.tight_layout()
+    ax.set_title(type(tsfrm).__name__)
+    show_landmarks(**transformed_sample)
+
+plt.show()
